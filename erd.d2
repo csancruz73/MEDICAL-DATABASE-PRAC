@@ -1,0 +1,339 @@
+# Medical Practice ERD - Part 1
+
+direction: right
+
+vars: {
+    d2-config: {
+        layout-engine: elk
+        theme-id: 0
+    }
+}
+
+# BLUE - Office and Equipment
+facilities: Office and Equipment {
+    style.fill: "#F0F7FF"
+    *.style.fill: "#DBEAFE"
+    *.style.font-color: "#111827"
+
+    office: {
+        shape: sql_table
+        office_id: BIGINT {constraint: primary_key}
+        name: VARCHAR(100)
+        phone: VARCHAR(25)
+        street: VARCHAR(150)
+        city: VARCHAR(80)
+        state: CHAR(2)
+        postal_code: VARCHAR(12)
+        active: BOOLEAN
+    }
+
+    room: {
+        shape: sql_table
+        room_id: BIGINT {constraint: primary_key}
+        office_id: BIGINT {constraint: foreign_key}
+        room_number: VARCHAR(20)
+        room_type: VARCHAR(40)
+        active: BOOLEAN
+    }
+
+    equipment: {
+        shape: sql_table
+        equipment_id: BIGINT {constraint: primary_key}
+        office_id: BIGINT {constraint: foreign_key}
+        name: VARCHAR(100)
+        asset_tag: VARCHAR(50) {constraint: unique}
+        equipment_type: VARCHAR(60)
+        active: BOOLEAN
+    }
+
+    equipment_booking: {
+        shape: sql_table
+        booking_id: BIGINT {constraint: primary_key}
+        equipment_id: BIGINT {constraint: foreign_key}
+        appointment_id: BIGINT {constraint: foreign_key}
+    }
+}
+
+# PURPLE - Employees and Doctors
+staff: Employees and Doctors {
+    style.fill: "#F5F3FF"
+    *.style.fill: "#EDE9FE"
+    *.style.font-color: "#111827"
+
+    employee: {
+        shape: sql_table
+        employee_id: BIGINT {constraint: primary_key}
+        office_id: BIGINT {constraint: foreign_key}
+        first_name: VARCHAR(60)
+        last_name: VARCHAR(60)
+        job_title: VARCHAR(80)
+        email: VARCHAR(254) {constraint: unique}
+        phone: VARCHAR(25)
+        hire_date: DATE
+        active: BOOLEAN
+    }
+
+    doctor: {
+        shape: sql_table
+        employee_id: BIGINT {
+            constraint: [primary_key; foreign_key]
+        }
+        license_number: VARCHAR(50) {constraint: unique}
+        license_state: CHAR(2)
+        active: BOOLEAN
+    }
+
+    specialization: {
+        shape: sql_table
+        specialization_id: BIGINT {constraint: primary_key}
+        name: VARCHAR(100) {constraint: unique}
+        description: TEXT
+    }
+
+    doctor_specialization: {
+        shape: sql_table
+        doctor_id: BIGINT {
+            constraint: [primary_key; foreign_key]
+        }
+        specialization_id: BIGINT {
+            constraint: [primary_key; foreign_key]
+        }
+    }
+}
+
+# GREEN - Patients and Appointments
+scheduling: Patients and Appointments {
+    style.fill: "#F0FDF4"
+    *.style.fill: "#DCFCE7"
+    *.style.font-color: "#111827"
+
+    patient: {
+        shape: sql_table
+        patient_id: BIGINT {constraint: primary_key}
+        pcp_doctor_id: BIGINT {constraint: foreign_key}
+        first_name: VARCHAR(60)
+        last_name: VARCHAR(60)
+        date_of_birth: DATE
+        phone: VARCHAR(25)
+        email: VARCHAR(254)
+        street: VARCHAR(150)
+        city: VARCHAR(80)
+        state: CHAR(2)
+        postal_code: VARCHAR(12)
+        emergency_contact_name: VARCHAR(120)
+        emergency_contact_phone: VARCHAR(25)
+    }
+
+    appointment_purpose: {
+        shape: sql_table
+        purpose_id: BIGINT {constraint: primary_key}
+        name: VARCHAR(80) {constraint: unique}
+        description: TEXT
+    }
+
+    appointments: {
+        shape: sql_table
+        appointment_id: BIGINT {constraint: primary_key}
+        patient_id: BIGINT {constraint: foreign_key}
+        doctor_id: BIGINT {constraint: foreign_key}
+        office_id: BIGINT {constraint: foreign_key}
+        room_id: BIGINT {constraint: foreign_key}
+        purpose_id: BIGINT {constraint: foreign_key}
+        starts_at: TIMESTAMPTZ
+        ends_at: TIMESTAMPTZ
+        status: VARCHAR(20)
+        clinical_notes: TEXT
+    }
+}
+
+# ORANGE - Medical Records
+clinical: Medical Records {
+    style.fill: "#FFF7ED"
+    *.style.fill: "#FFEDD5"
+    *.style.font-color: "#111827"
+
+    diagnosis_code: {
+        shape: sql_table
+        diagnosis_code_id: BIGINT {constraint: primary_key}
+        code: VARCHAR(20) {constraint: unique}
+        name: VARCHAR(200)
+        description: TEXT
+    }
+
+    patient_diagnosis: {
+        shape: sql_table
+        patient_diagnosis_id: BIGINT {constraint: primary_key}
+        patient_id: BIGINT {constraint: foreign_key}
+        appointment_id: BIGINT {constraint: foreign_key}
+        diagnosis_code_id: BIGINT {constraint: foreign_key}
+        diagnosed_at: TIMESTAMPTZ
+        status: VARCHAR(20)
+        resolved_at: TIMESTAMPTZ
+        notes: TEXT
+    }
+
+    treatment_types: {
+        shape: sql_table
+        treatment_type_id: BIGINT {constraint: primary_key}
+        name: VARCHAR(100) {constraint: unique}
+        description: TEXT
+    }
+
+    appointment_treatments: {
+        shape: sql_table
+        appointment_id: BIGINT {
+            constraint: [primary_key; foreign_key]
+        }
+        treatment_type_id: BIGINT {
+            constraint: [primary_key; foreign_key]
+        }
+    }
+
+    prescription: {
+        shape: sql_table
+        prescription_id: BIGINT {constraint: primary_key}
+        doctor_id: BIGINT {constraint: foreign_key}
+        patient_id: BIGINT {constraint: foreign_key}
+        medication_name: VARCHAR(120)
+        dose: VARCHAR(100)
+        frequency: VARCHAR(100)
+        start_date: DATE
+        end_date: DATE
+        instructions: TEXT
+        is_controlled_substance: BOOLEAN
+    }
+}
+
+# GRAY - Accounts and Audit
+accounts: Accounts and Audit {
+    style.fill: "#F8FAFC"
+    *.style.fill: "#E2E8F0"
+    *.style.font-color: "#111827"
+
+    role: {
+        shape: sql_table
+        role_id: BIGINT {constraint: primary_key}
+        role_name: VARCHAR(50) {constraint: unique}
+    }
+
+    app_user: {
+        shape: sql_table
+        user_id: BIGINT {constraint: primary_key}
+        employee_id: BIGINT {constraint: foreign_key}
+        patient_id: BIGINT {constraint: foreign_key}
+        username: VARCHAR(50) {constraint: unique}
+        password_hash: VARCHAR(255)
+        role_id: BIGINT {constraint: foreign_key}
+    }
+
+    prescription_cs_log: {
+        shape: sql_table
+        log_id: BIGINT {constraint: primary_key}
+        prescribed_at: TIMESTAMPTZ
+        user_id: BIGINT {constraint: foreign_key}
+        patient_id: BIGINT {constraint: foreign_key}
+        prescription_id: BIGINT {constraint: foreign_key}
+        changed_at: TIMESTAMPTZ
+        change_description: TEXT
+    }
+}
+
+# YELLOW - Billing
+billing: Services and Payments {
+    style.fill: "#FFFBEB"
+    *.style.fill: "#FEF3C7"
+    *.style.font-color: "#111827"
+
+    service: {
+        shape: sql_table
+        service_id: BIGINT {constraint: primary_key}
+        service_name: VARCHAR(100) {constraint: unique}
+        standard_price: NUMERIC(10, 2)
+    }
+
+    invoice: {
+        shape: sql_table
+        invoice_id: BIGINT {constraint: primary_key}
+        patient_id: BIGINT {constraint: foreign_key}
+        appointment_id: BIGINT {constraint: foreign_key}
+        invoice_date: DATE
+        due_date: DATE
+        status: VARCHAR(20)
+    }
+
+    invoice_listing: {
+        shape: sql_table
+        invoice_listing_id: BIGINT {constraint: primary_key}
+        invoice_id: BIGINT {constraint: foreign_key}
+        service_id: BIGINT {constraint: foreign_key}
+        quantity: INT
+        unit_price: NUMERIC(10, 2)
+    }
+
+    payment: {
+        shape: sql_table
+        payment_id: BIGINT {constraint: primary_key}
+        invoice_id: BIGINT {constraint: foreign_key}
+        amount: NUMERIC(10, 2)
+        paid_at: TIMESTAMPTZ
+        payment_method: VARCHAR(50)
+    }
+}
+
+# RELATIONSHIPS
+
+# Offices, rooms, equipment, and employees
+facilities.office.office_id -> facilities.room.office_id: "1 to 0..*"
+facilities.office.office_id -> facilities.equipment.office_id: "1 to 0..*"
+facilities.office.office_id -> staff.employee.office_id: "1 to 0..*"
+
+# Doctors and specializations
+staff.employee.employee_id -> staff.doctor.employee_id: "1 to 0..1"
+staff.doctor.employee_id -> staff.doctor_specialization.doctor_id: "1 to 0..*"
+staff.specialization.specialization_id -> staff.doctor_specialization.specialization_id: "1 to 0..*"
+
+# Patient's primary care doctor
+staff.doctor.employee_id -> scheduling.patient.pcp_doctor_id: "0..1 to 0..* (PCP)"
+
+# Appointments
+scheduling.patient.patient_id -> scheduling.appointments.patient_id: "1 to 0..*"
+staff.doctor.employee_id -> scheduling.appointments.doctor_id: "1 to 0..*"
+facilities.office.office_id -> scheduling.appointments.office_id: "1 to 0..*"
+facilities.room.room_id -> scheduling.appointments.room_id: "0..1 to 0..*"
+scheduling.appointment_purpose.purpose_id -> scheduling.appointments.purpose_id: "1 to 0..*"
+
+# Equipment bookings
+facilities.equipment.equipment_id -> facilities.equipment_booking.equipment_id: "1 to 0..*"
+scheduling.appointments.appointment_id -> facilities.equipment_booking.appointment_id: "1 to 0..*"
+
+# Patient diagnoses
+scheduling.patient.patient_id -> clinical.patient_diagnosis.patient_id: "1 to 0..*"
+scheduling.appointments.appointment_id -> clinical.patient_diagnosis.appointment_id: "1 to 0..*"
+clinical.diagnosis_code.diagnosis_code_id -> clinical.patient_diagnosis.diagnosis_code_id: "1 to 0..*"
+
+# Treatments
+scheduling.appointments.appointment_id -> clinical.appointment_treatments.appointment_id: "1 to 0..*"
+clinical.treatment_types.treatment_type_id -> clinical.appointment_treatments.treatment_type_id: "1 to 0..*"
+
+# Prescriptions
+scheduling.patient.patient_id -> clinical.prescription.patient_id: "1 to 0..*"
+staff.doctor.employee_id -> clinical.prescription.doctor_id: "1 to 0..*"
+
+# User accounts and roles
+staff.employee.employee_id -> accounts.app_user.employee_id: "0..1 to 0..*"
+scheduling.patient.patient_id -> accounts.app_user.patient_id: "0..1 to 0..*"
+accounts.role.role_id -> accounts.app_user.role_id: "1 to 0..*"
+
+# Invoices and services
+scheduling.patient.patient_id -> billing.invoice.patient_id: "1 to 0..*"
+scheduling.appointments.appointment_id -> billing.invoice.appointment_id: "1 to 0..*"
+billing.invoice.invoice_id -> billing.invoice_listing.invoice_id: "1 to 1..*"
+billing.service.service_id -> billing.invoice_listing.service_id: "1 to 0..*"
+
+# Payments
+billing.invoice.invoice_id -> billing.payment.invoice_id: "1 to 0..*"
+
+# Prescription audit logs
+accounts.app_user.user_id -> accounts.prescription_cs_log.user_id: "1 to 0..*"
+scheduling.patient.patient_id -> accounts.prescription_cs_log.patient_id: "1 to 0..*"
+clinical.prescription.prescription_id -> accounts.prescription_cs_log.prescription_id: "1 to 0..*"
